@@ -656,7 +656,7 @@
   <section id="landing-screen">
     <div class="landing-card">
       <img src="logoescuela.jpg" alt="Escudo Escuela Secundaria N° 237 Nueva Trinidad" class="landing-logo">
-      <h1>Escuela Secundaria <br>Nueva Trinidad</h1>
+      <h1>Escuela Secundaria de<br>Nueva Trinidad</h1>
       <p class="subtitle">
         Plataforma de Asistentes Virtuales de Inteligencia Artificial.<br>
         Un compromiso permanente con la educación y el aprendizaje guiado.
@@ -1137,7 +1137,7 @@ REGLAS DE ORO TUCUMANAS Y SÓCRATICAS:
 
       try {
         // Conexión directa a la API de Google Gemini usando la API Key personal del alumno
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
 
         const response = await fetch(endpoint, {
           method: "POST",
