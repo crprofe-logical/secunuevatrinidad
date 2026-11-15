@@ -515,10 +515,14 @@ REGLAS DE ORO TUCUMANAS Y SÓCRATICAS:
       document.getElementById("user-input").placeholder = "Escribí tu pregunta acá...";
     }
 
-    function speakText(text) {
+  function speakText(text) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Limpiamos los asteriscos para que no los lea en voz alta
+        const textoLimpio = text.replace(/\*/g, '');
+        
+        const utterance = new SpeechSynthesisUtterance(textoLimpio);
         utterance.lang = 'es-AR';
         utterance.rate = 0.95;
         window.speechSynthesis.speak(utterance);
