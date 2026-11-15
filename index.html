@@ -293,6 +293,28 @@
       border-color: var(--primary);
     }
 
+    .mic-btn {
+      padding: 0 0.9rem;
+      border: none;
+      border-radius: 10px;
+      background-color: #64748b;
+      color: white;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .mic-btn.listening {
+      background-color: #ef4444;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
     .send-btn {
       padding: 0 1.3rem;
       border: none;
@@ -373,6 +395,7 @@
 
       <form class="chat-input-area" onsubmit="sendMessage(event)">
         <input type="text" id="user-input" placeholder="Escribí tu pregunta acá..." autocomplete="off" required>
+        <button type="button" id="mic-btn" class="mic-btn" onclick="toggleSpeechRecognition()" title="Hablar por voz">🎤</button>
         <button type="submit" class="send-btn" id="send-btn">Enviar</button>
       </form>
     </div>
@@ -436,28 +459,86 @@ REGLAS DE ORO TUCUMANAS Y SÓCRATICAS:
     };
 
     // =========================================================================
-    // LÓGICA DEL CHAT
+    // LÓGICA DEL CHAT Y ACCESIBILIDAD POR VOZ
     // =========================================================================
     let currentBotKey = null;
     let chatHistory = [];
+    let recognition = null;
+    let isListening = false;
+
+    // Configurar reconocimiento de voz del navegador
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.lang = 'es-AR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = function() {
+        isListening = true;
+        const micBtn = document.getElementById("mic-btn");
+        if (micBtn) micBtn.classList.add("listening");
+        document.getElementById("user-input").placeholder = "Escuchando... Hablá ahora chango...";
+      };
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById("user-input").value = transcript;
+      };
+
+      recognition.onerror = function(event) {
+        console.error("Error en voz:", event.error);
+        stopListening();
+      };
+
+      recognition.onend = function() {
+        stopListening();
+      };
+    }
+
+    function toggleSpeechRecognition() {
+      if (!recognition) {
+        alert("Tu navegador no soporta reconocimiento de voz. Usá Google Chrome.");
+        return;
+      }
+      if (isListening) {
+        recognition.stop();
+      } else {
+        recognition.start();
+      }
+    }
+
+    function stopListening() {
+      isListening = false;
+      const micBtn = document.getElementById("mic-btn");
+      if (micBtn) micBtn.classList.remove("listening");
+      document.getElementById("user-input").placeholder = "Escribí tu pregunta acá...";
+    }
+
+    function speakText(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'es-AR';
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
 
     function selectBot(botKey) {
       currentBotKey = botKey;
       const bot = BOTS[botKey];
 
-      // Actualizar tarjetas activas (Kira, Vortex y Samy)
       document.getElementById("card-kira").classList.toggle("active", botKey === "kira");
       document.getElementById("card-vortex").classList.toggle("active", botKey === "vortex");
       document.getElementById("card-samy").classList.toggle("active", botKey === "samy");
 
-      // Configurar cabecera del chat
       const header = document.getElementById("chat-header");
       header.className = "chat-header " + bot.themeClass;
       document.getElementById("chat-avatar").src = bot.avatar;
       document.getElementById("chat-bot-name").textContent = bot.name;
       document.getElementById("chat-bot-subject").textContent = "Tutoría de " + bot.subject;
 
-      // Mostrar ventana de chat
       const container = document.getElementById("chat-container");
       container.classList.add("visible");
 
@@ -471,7 +552,8 @@ REGLAS DE ORO TUCUMANAS Y SÓCRATICAS:
       chatHistory = [];
       const messagesDiv = document.getElementById("chat-messages");
       messagesDiv.innerHTML = "";
-      appendMessage("bot", bot.welcome);
+      const welcomeMsg = appendMessage("bot", bot.welcome);
+      speakText(bot.welcome);
     }
 
     function appendMessage(sender, text) {
@@ -533,6 +615,8 @@ REGLAS DE ORO TUCUMANAS Y SÓCRATICAS:
         } else {
           const botReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "No pude generar una respuesta en este momento.";
           appendMessage("bot", botReply);
+          speakText(botReply); // ¡Lectura en voz alta automática!
+
           chatHistory.push({
             role: "model",
             parts: [{ text: botReply }]
